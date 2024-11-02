@@ -1,0 +1,422 @@
+swagger: "2.0"
+info:
+  title: Todo List API
+  description: API for managing users, to-do lists, and tasks with hierarchical levels.
+  version: "1.0.0"
+host: localhost:8080  # Replace with your server and port
+schemes:
+  - http
+  - https # If using HTTPS
+
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    in: header
+    name: Authorization # Or your actual header name
+
+
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/RegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/UserResponse'
+        '400':
+          description: Bad request (e.g., missing fields, user exists)
+        '500':
+          description: Internal server error
+
+  /login:
+    post:
+      summary: Login a user
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/LoginRequest'
+      responses:
+        '200':
+          description: Logged in successfully
+          schema:
+            $ref: '#/definitions/UserResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Invalid credentials
+        '500':
+          description: Internal server error
+
+  /logout:
+    get:
+      summary: Logout a user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+        '401':
+          description: Unauthorized
+
+  /check-auth:
+    get:
+      summary: Check authentication
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Authenticated
+          schema:
+            $ref: '#/definitions/UserAuthStatus'
+        '401':
+          description: Not authenticated
+
+
+  /lists:
+    get:
+      summary: Get all lists for user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of lists
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TodoList'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a list
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateTodoListRequest'
+      responses:
+        '201':
+          description: List created
+          schema:
+            $ref: '#/definitions/TodoList'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /lists/{list_id}:
+    put:
+      summary: Update a list
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: list_id
+          type: integer
+          required: true
+          description: ID of the list
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateTodoListRequest'
+      responses:
+        '200':
+          description: List updated
+          schema:
+            $ref: '#/definitions/TodoList'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (not owner)
+        '404':
+          description: List not found
+
+    delete:
+      summary: Delete a list
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: list_id
+          type: integer
+          required: true
+          description: ID of the list
+      responses:
+        '200':
+          description: List deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: List not found
+
+
+  /lists/{list_id}/items:
+    get:
+      summary: Get items in a list
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: list_id
+          type: integer
+          required: true
+          description: ID of the list
+      responses:
+        '200':
+          description: List of items
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TodoItem'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: List not found
+
+    post:
+      summary: Create an item in a list
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: list_id
+          type: integer
+          required: true
+          description: ID of the list
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateTodoItemRequest'
+      responses:
+        '201':
+          description: Item created
+          schema:
+            $ref: '#/definitions/TodoItem'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+
+  /items/{item_id}:
+    put:
+      summary: Update an item
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: item_id
+          type: integer
+          required: true
+          description: ID of the item
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateTodoItemRequest'
+      responses:
+        '200':
+          description: Item updated
+          schema:
+            $ref: '#/definitions/TodoItem'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Item not found
+
+
+    delete:
+      summary: Delete an item
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: item_id
+          type: integer
+          required: true
+          description: ID of the item
+
+      responses:
+        '200':
+          description: Item deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Item not found
+
+definitions:
+  RegisterRequest:
+    type: object
+    properties:
+      username:
+        type: string
+        description: Unique username for the new user
+      email:
+        type: string
+        description: Valid email address for the new user
+      password:
+        type: string
+        format: password
+        description: Password for the new user (will be hashed)
+    required:
+      - username
+      - email
+      - password
+
+  LoginRequest:
+    type: object
+    properties:
+      username:
+        type: string
+        description: Username of the user to log in
+      password:
+        type: string
+        format: password
+        description: Password of the user to log in
+    required:
+      - username
+      - password
+
+  UserResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Unique identifier of the user
+      username:
+        type: string
+        description: Username of the user
+      email:
+        type: string
+        description: Email address of the user
+      message:
+        type: string
+        description: Status message (e.g., "Logged in successfully")
+
+  UserAuthStatus:
+    type: object
+    properties:
+      authenticated:
+        type: boolean
+        description: True if the user is authenticated, False otherwise
+      user:
+        $ref: '#/definitions/UserResponse'
+        description: User details if authenticated, null otherwise
+
+  CreateTodoListRequest:
+    type: object
+    properties:
+      title:
+        type: string
+        description: Title of the new to-do list
+    required:
+      - title
+
+  TodoList:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Unique identifier of the to-do list
+      title:
+        type: string
+        description: Title of the to-do list
+      created_at:
+        type: string
+        format: date-time
+        description: Date and time the list was created
+
+  UpdateTodoListRequest:
+    type: object
+    properties:
+      title:
+        type: string
+        description: New title for the to-do list
+    required:
+      - title
+
+  CreateTodoItemRequest:
+    type: object
+    properties:
+      content:
+        type: string
+        description: Content/text of the new to-do item
+      parent_id:
+        type: integer
+        description: ID of the parent item (if any, for subtasks), or null
+        default: null #  Swagger will show null as a default value
+
+    required:
+      - content
+
+  TodoItem:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Unique identifier of the to-do item
+      content:
+        type: string
+        description: Content/text of the to-do item
+      completed:
+        type: boolean
+        description: True if the item is completed, False otherwise
+      collapsed:
+        type: boolean
+        description: True if the item's children are collapsed, False otherwise
+      level:
+        type: integer
+        description: Hierarchy level of the item (1 for top-level, 2 for subtask, etc.)
+      created_at:
+        type: string
+        format: date-time
+        description: Date and time the item was created
+      children:
+        type: array
+        items:
+          $ref: '#/definitions/TodoItem'
+        description: List of child to-do items (subtasks)
+
+  UpdateTodoItemRequest:
+    type: object
+    properties:
+      content:
+        type: string
+        description: New content for the to-do item
+      completed:
+        type: boolean
+        description: New completed status for the to-do item
+      collapsed:
+        type: boolean
+        description: New collapsed status for the to-do item
+      list_id:
+        type: integer
+        description: The new ID for the list if you are moving the item
