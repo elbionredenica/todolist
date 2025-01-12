@@ -2,9 +2,6 @@
 
 This project implements a full-stack to-do list application with user authentication, allowing users to create, manage, and organize their tasks. It uses a React frontend, a Flask backend, and a relational database (SQLite) for persistence.
 
-### Watch a [demo here.](https://www.loom.com/share/badb87981264407e9daa614ab2124a5a?sid=cf878944-f64e-461e-aa07-85041524890d)
-### Github Repository [here.](https://github.com/elbionredenica/todolist)
-
 ## Features
 
 * **User Authentication:** Secure user registration and login with password hashing (bcrypt).
